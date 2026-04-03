@@ -218,27 +218,46 @@ async def delete_doc(doc_id: str):
 
 @app.post("/api/chat")
 def chat(request: ChatRequest):
-    doc = _get_document_meta(request.document_id)
-    if doc and doc.get("status") != "processed":
-        raise HTTPException(400, "Document is still processing. Please wait.")
+    if request.document_id != "all":
+        doc = _get_document_meta(request.document_id)
+        if doc and doc.get("status") != "processed":
+            raise HTTPException(400, "Document is still processing. Please wait.")
 
     try:
-        from rag.vectorstore import load_vectorstore
+        from rag.vectorstore import load_vectorstore, load_all_vectorstores
         from rag.query_pipeline import query_rag
 
-        collection_name = f"doc_{request.document_id.replace('-', '_')}"
-        vectordb = load_vectorstore(collection_name)
+        if request.document_id == "all":
+            # [Multi-Document Strategy]
+            vectordb = load_all_vectorstores()
+            if not vectordb:
+                raise HTTPException(404, "No documents available for global search.")
+            
+            all_docs = []
+            if DOCS_PKL_DIR.exists():
+                for pkl_file in os.listdir(DOCS_PKL_DIR):
+                    if pkl_file.endswith(".pkl"):
+                        with open(os.path.join(DOCS_PKL_DIR, pkl_file), "rb") as pf:
+                            all_docs.extend(pickle.load(pf))
+            
+            if not all_docs:
+                raise HTTPException(404, "No text chunks available for global search.")
+                
+        else:
+            # [Single-Document Strategy]
+            collection_name = f"doc_{request.document_id.replace('-', '_')}"
+            vectordb = load_vectorstore(collection_name)
 
-        pkl_path = DOCS_PKL_DIR / f"{request.document_id}.pkl"
-        all_docs = None
-        if not pkl_path.exists():
-            raise HTTPException(
-                404,
-                "Document pickle not found. Upload may not have finished or state was reset on redeploy.",
-            )
+            pkl_path = DOCS_PKL_DIR / f"{request.document_id}.pkl"
+            all_docs = None
+            if not pkl_path.exists():
+                raise HTTPException(
+                    404,
+                    "Document not found. Upload may not have finished or state was reset on redeploy.",
+                )
 
-        with open(pkl_path, "rb") as pf:
-            all_docs = pickle.load(pf)
+            with open(pkl_path, "rb") as pf:
+                all_docs = pickle.load(pf)
 
         answer, source_docs = query_rag(
             request.query,

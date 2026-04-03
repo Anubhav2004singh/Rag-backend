@@ -99,3 +99,44 @@ def load_vectorstore(collection_name="default"):
 
     print("[OK] Vector store loaded", flush=True)
     return vectorstore
+
+
+# -----------------------------
+# Multi-Document Merge
+# -----------------------------
+
+def load_all_vectorstores():
+    """
+    Loads all FAISS instances in the DB_DIR and perfectly merges them 
+    into an overarching global multidimensional vector space.
+    """
+    print("[MULTI] Preparing dynamically merged Global Vector Store...", flush=True)
+    
+    embeddings = get_embedding()
+    base_vectorstore = None
+    merged_count = 0
+
+    if not os.path.exists(DB_DIR):
+        print("[ERROR] No database directory found.", flush=True)
+        return None
+
+    # Iterate through all saved collections
+    for collection_dir in os.listdir(DB_DIR):
+        full_path = os.path.join(DB_DIR, collection_dir)
+        if os.path.isdir(full_path) and collection_dir.startswith("doc_"):
+            try:
+                temp_vs = FAISS.load_local(
+                    full_path, 
+                    embeddings, 
+                    allow_dangerous_deserialization=True
+                )
+                if base_vectorstore is None:
+                    base_vectorstore = temp_vs
+                else:
+                    base_vectorstore.merge_from(temp_vs)
+                merged_count += 1
+            except Exception as e:
+                print(f"[WARN] Failed to load or merge vectorstore {collection_dir}: {e}", flush=True)
+                
+    print(f"[OK] Globally merged {merged_count} FAISS Vector Stores.", flush=True)
+    return base_vectorstore
