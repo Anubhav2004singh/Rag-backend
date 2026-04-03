@@ -18,9 +18,9 @@ def get_embedding():
         print("[LOAD] Initializing Google API Embeddings (Zero RAM footprint)...", flush=True)
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         
-        # text-embedding-004 is the latest and fastest embedding model
+        # Using the ultra-stable embedding-001 model for compatibility 
         _embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004", 
+            model="models/embedding-001", 
             task_type="retrieval_document"
         )
     return _embedding_model
