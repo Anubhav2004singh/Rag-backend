@@ -102,7 +102,7 @@ async def root():
 
 
 @app.post("/api/upload")
-async def upload(file: UploadFile = File(...)):
+def upload(file: UploadFile = File(...)):
     """
     Upload PDF and process it SYNCHRONOUSLY.
     On Render free tier, background threads get killed when the service
@@ -116,7 +116,7 @@ async def upload(file: UploadFile = File(...)):
     file_path = DOCS_DIR / f"{doc_id}_{file.filename}"
 
     # Save file
-    contents = await file.read()
+    contents = file.file.read()
     with open(file_path, "wb") as f:
         f.write(contents)
 
@@ -198,7 +198,7 @@ async def delete_doc(doc_id: str):
 
 
 @app.post("/api/chat")
-async def chat(request: ChatRequest):
+def chat(request: ChatRequest):
 
     doc = _get_document_meta(request.document_id)
     if not doc:
