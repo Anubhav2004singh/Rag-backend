@@ -15,9 +15,14 @@ _embedding_model = None
 def get_embedding():
     global _embedding_model
     if _embedding_model is None:
-        print("[LOAD] Initializing Local FastEmbed...", flush=True)
-        from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-        _embedding_model = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5", threads=1)
+        print("[LOAD] Initializing Google API Embeddings (Zero RAM footprint)...", flush=True)
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        
+        # text-embedding-004 is the latest and fastest embedding model
+        _embedding_model = GoogleGenerativeAIEmbeddings(
+            model="models/text-embedding-004", 
+            task_type="retrieval_document"
+        )
     return _embedding_model
 
 
@@ -34,12 +39,18 @@ def create_vector_store(documents, collection_name="default"):
     embeddings = get_embedding()
     
     vectorstore = None
-    batch_size = 16
+    batch_size = 50  # API handles larger batches gracefully
     total = len(documents)
 
     for i in range(0, total, batch_size):
         batch = documents[i:i + batch_size]
-        print(f"   Embedding batch {i // batch_size + 1}/{(total + batch_size - 1) // batch_size}...", flush=True)
+        print(f"   Embedding batch {i // batch_size + 1}/{(total + batch_size - 1) // batch_size} via Google API...", flush=True)
+        
+        # We add a tiny 1.5s sleep to prevent 429 Rate Limit errors from Google's Free API
+        if i > 0:
+            import time
+            time.sleep(1.5)
+            
         if vectorstore is None:
             vectorstore = FAISS.from_documents(batch, embeddings)
         else:
