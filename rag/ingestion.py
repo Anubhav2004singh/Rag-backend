@@ -10,42 +10,30 @@ load_dotenv(override=True)
 
 
 # =============================================
-# FAST PDF Text Extraction (using pdfplumber)
+# LIGHTNING PDF Text Extraction (using PyMuPDF)
 # =============================================
 
 def extract_text_from_pdf(file_path: str) -> tuple[str, int]:
     """
-    Extract text from PDF using pdfplumber (FAST).
+    Extract text from PDF using PyMuPDF (fitz) for extreme speed.
     Returns (full_text, page_count)
     """
-    import pdfplumber
+    import fitz  # PyMuPDF
 
     print(f"[FILE] Extracting text from: {file_path}")
 
     full_text = ""
     page_count = 0
 
-    with pdfplumber.open(file_path) as pdf:
-        page_count = len(pdf.pages)
-        print(f"   Pages: {page_count}")
+    try:
+        with fitz.open(file_path) as pdf:
+            page_count = len(pdf)
+            print(f"   Pages: {page_count}")
 
-        for i, page in enumerate(pdf.pages):
-            text = page.extract_text() or ""
-
-            # Also extract tables as text
-            tables = page.extract_tables()
-            table_text = ""
-            for table in tables:
-                for row in table:
-                    if row:
-                        cleaned = [str(cell).strip() if cell else "" for cell in row]
-                        table_text += " | ".join(cleaned) + "\n"
-
-            page_text = text
-            if table_text:
-                page_text += f"\n\n[Table from page {i+1}]\n{table_text}"
-
-            full_text += page_text + "\n\n"
+            for page in pdf:
+                full_text += page.get_text() + "\n\n"
+    except Exception as e:
+        print(f"Error extracting PDF: {e}")
 
     print(f"   Extracted {len(full_text)} characters")
     return full_text.strip(), page_count
@@ -96,16 +84,8 @@ def run_complete_ingestion_pipeline(pdf_path: str) -> List[Document]:
     text, page_count = extract_text_from_pdf(pdf_path)
 
     if not text.strip():
-        print("[WARN] No text extracted from PDF. It might be a scanned/image-only PDF.")
-        print("   Falling back to basic extraction...")
-        # Try with a simpler approach for scanned PDFs
-        try:
-            from unstructured.partition.pdf import partition_pdf
-            elements = partition_pdf(filename=pdf_path, strategy="fast")
-            text = "\n\n".join([el.text for el in elements if el.text])
-        except Exception as e:
-            print(f"   Fallback also failed: {e}")
-            return []
+        print("[WARN] No text extracted from PDF (likely an image). OCR is currently disabled for max speed.")
+        return []
 
     # Step 2: Chunk
     documents = chunk_text(text)

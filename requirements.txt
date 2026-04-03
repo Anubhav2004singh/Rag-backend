@@ -1,28 +1,23 @@
-﻿langchain-chroma
-chromadb
 langchain-google-genai
-
-
-
 python-dotenv
 pydantic
-typing-extensions
 langchain-core
-
-
-unstructured[pdf]
-
-
 langchain-text-splitters
 langchain-community
 langchain
 
-
-sentence_transformers
-pdfplumber>=0.11.0
-
-
-rank_bm25
+# Local UI/API
 fastapi
 uvicorn[standard]
 python-multipart
+
+# Fast Ingestion
+pymupdf
+
+# Lightweight Vector Search & Embeddings
+faiss-cpu
+langchain-huggingface
+sentence-transformers
+
+# Hybrid Search
+rank_bm25

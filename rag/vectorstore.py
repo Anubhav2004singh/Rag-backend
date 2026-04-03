@@ -1,22 +1,26 @@
 import os
-os.environ["ANONYMIZED_TELEMETRY"] = "False"
+import faiss
+from langchain_community.vectorstores import FAISS
+from langchain_community.docstore.in_memory import InMemoryDocstore
+from langchain_huggingface import HuggingFaceEmbeddings
 
-from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-
-
-DB_PATH = "db/chroma_db"
-
+DB_DIR = "db/faiss_indexes"
+os.makedirs(DB_DIR, exist_ok=True)
 
 # -----------------------------
-# Embedding Model
+# Lazy-loaded Embedding Model
 # -----------------------------
+
+_embedding_model = None
 
 def get_embedding():
-
-    return  GoogleGenerativeAIEmbeddings(
-    model="models/gemini-embedding-001"
-)
+    global _embedding_model
+    if _embedding_model is None:
+        print("[LOAD] Initializing Local HuggingFace Embeddings...")
+        _embedding_model = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
+    return _embedding_model
 
 
 # -----------------------------
@@ -26,26 +30,19 @@ def get_embedding():
 def create_vector_store(documents, collection_name="default"):
     """
     Create vector store for documents
-
-    Args:
-        documents: list of LangChain Document objects
-        collection_name: unique name for the collection (e.g. document ID)
     """
-
-    print(f"Creating embeddings and storing in ChromaDB (collection: {collection_name})...")
+    print(f"Creating embeddings and storing in FAISS (collection: {collection_name})...")
 
     embeddings = get_embedding()
+    
+    # FAISS creation is extremely fast and entirely in memory natively
+    vectorstore = FAISS.from_documents(documents, embeddings)
+    
+    # Save the index locally to disk
+    save_path = os.path.join(DB_DIR, collection_name)
+    vectorstore.save_local(save_path)
 
-    vectorstore = Chroma.from_documents(
-        documents=documents,
-        embedding=embeddings,
-        persist_directory=DB_PATH,
-        collection_name=collection_name,
-        collection_metadata={"hnsw:space": "cosine"}
-    )
-
-    print("[OK] Vector store saved at:", DB_PATH)
-
+    print("[OK] Vector store saved at:", save_path)
     return vectorstore
 
 
@@ -56,21 +53,17 @@ def create_vector_store(documents, collection_name="default"):
 def load_vectorstore(collection_name="default"):
     """
     Load existing vector store
-
-    Args:
-        collection_name: name of the collection to load
     """
-
     print(f"Loading existing vector store (collection: {collection_name})...")
 
     embeddings = get_embedding()
+    save_path = os.path.join(DB_DIR, collection_name)
 
-    vectorstore = Chroma(
-        persist_directory=DB_PATH,
-        embedding_function=embeddings,
-        collection_name=collection_name,
+    vectorstore = FAISS.load_local(
+        save_path, 
+        embeddings, 
+        allow_dangerous_deserialization=True
     )
 
     print("[OK] Vector store loaded")
-
     return vectorstore

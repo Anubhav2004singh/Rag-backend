@@ -203,6 +203,12 @@ async def delete_doc(doc_id: str):
     if pkl.exists():
         pkl.unlink()
 
+    # Remove vector DB
+    faiss_dir = DB_DIR / "faiss_indexes" / f"doc_{doc_id.replace('-', '_')}"
+    if faiss_dir.exists():
+        import shutil
+        shutil.rmtree(faiss_dir)
+
     # Remove from metadata
     docs = [d for d in _load_documents_meta() if d["id"] != doc_id]
     _save_documents_meta(docs)
