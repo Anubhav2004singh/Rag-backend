@@ -1,0 +1,21 @@
+.env
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore virtual environment
+.venv/
+venv/
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+
+
+# Ignore database files
+db/chroma_db/
+db/documents.json
+
+
