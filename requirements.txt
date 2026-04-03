@@ -16,8 +16,7 @@ pymupdf
 
 # Lightweight Vector Search & Embeddings
 faiss-cpu
-langchain-huggingface
-sentence-transformers
+fastembed
 
 # Hybrid Search
 rank_bm25

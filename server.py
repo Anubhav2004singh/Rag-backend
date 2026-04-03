@@ -99,7 +99,7 @@ def _ingest_document_sync(doc_id: str, file_path_str: str, filename: str):
         from rag.ingestion import run_complete_ingestion_pipeline
         from rag.vectorstore import create_vector_store
 
-        print(f"Processing {doc_id}: {filename}")
+        print(f"Processing {doc_id}: {filename}", flush=True)
         chunk_docs = run_complete_ingestion_pipeline(file_path_str)
 
         if not chunk_docs:
@@ -118,7 +118,7 @@ def _ingest_document_sync(doc_id: str, file_path_str: str, filename: str):
         create_vector_store(chunk_docs, collection_name=collection_name)
 
         _update_document_status(doc_id, status="processed", chunk_count=len(chunk_docs))
-        print(f"Done {doc_id}: {len(chunk_docs)} chunks")
+        print(f"Done {doc_id}: {len(chunk_docs)} chunks", flush=True)
 
     except Exception as e:
         traceback.print_exc()
@@ -262,5 +262,5 @@ def chat(request: ChatRequest):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    print(f"Starting server on port {port}")
+    print(f"Starting server on port {port}", flush=True)
     uvicorn.run(app, host="0.0.0.0", port=port)

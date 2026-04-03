@@ -20,7 +20,7 @@ def extract_text_from_pdf(file_path: str) -> tuple[str, int]:
     """
     import fitz  # PyMuPDF
 
-    print(f"[FILE] Extracting text from: {file_path}")
+    print(f"[FILE] Extracting text from: {file_path}", flush=True)
 
     full_text = ""
     page_count = 0
@@ -28,14 +28,14 @@ def extract_text_from_pdf(file_path: str) -> tuple[str, int]:
     try:
         with fitz.open(file_path) as pdf:
             page_count = len(pdf)
-            print(f"   Pages: {page_count}")
+            print(f"   Pages: {page_count}", flush=True)
 
             for page in pdf:
                 full_text += page.get_text() + "\n\n"
     except Exception as e:
-        print(f"Error extracting PDF: {e}")
+        print(f"Error extracting PDF: {e}", flush=True)
 
-    print(f"   Extracted {len(full_text)} characters")
+    print(f"   Extracted {len(full_text)} characters", flush=True)
     return full_text.strip(), page_count
 
 
@@ -48,7 +48,7 @@ def chunk_text(text: str, chunk_size: int = 1500, chunk_overlap: int = 200) -> L
     Split text into chunks using RecursiveCharacterTextSplitter.
     Much faster than unstructured's chunk_by_title.
     """
-    print(f"[CUT] Splitting text into chunks (size={chunk_size}, overlap={chunk_overlap})")
+    print(f"[CUT] Splitting text into chunks (size={chunk_size}, overlap={chunk_overlap})", flush=True)
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -59,7 +59,7 @@ def chunk_text(text: str, chunk_size: int = 1500, chunk_overlap: int = 200) -> L
 
     chunks = splitter.create_documents([text])
 
-    print(f"   Created {len(chunks)} chunks")
+    print(f"   Created {len(chunks)} chunks", flush=True)
     return chunks
 
 
@@ -76,15 +76,15 @@ def run_complete_ingestion_pipeline(pdf_path: str) -> List[Document]:
 
     Typically completes in < 30 seconds for most PDFs.
     """
-    print("=" * 50)
-    print("[>>] Starting FAST ingestion pipeline")
-    print("=" * 50)
+    print("=" * 50, flush=True)
+    print("[>>] Starting FAST ingestion pipeline", flush=True)
+    print("=" * 50, flush=True)
 
     # Step 1: Extract text
     text, page_count = extract_text_from_pdf(pdf_path)
 
     if not text.strip():
-        print("[WARN] No text extracted from PDF (likely an image). OCR is currently disabled for max speed.")
+        print("[WARN] No text extracted from PDF (likely an image). OCR is currently disabled for max speed.", flush=True)
         return []
 
     # Step 2: Chunk
@@ -94,5 +94,5 @@ def run_complete_ingestion_pipeline(pdf_path: str) -> List[Document]:
     for doc in documents:
         doc.metadata["source_pages"] = page_count
 
-    print(f"\n[OK] Pipeline complete: {len(documents)} chunks from {page_count} pages")
+    print(f"\n[OK] Pipeline complete: {len(documents)} chunks from {page_count} pages", flush=True)
     return documents
