@@ -49,19 +49,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# #region deps check
-@app.on_event("startup")
-def _deps_startup_check():
-    # Runtime proof in Render logs: ensures `langchain-community` is installed.
-    try:
-        import langchain_community  # noqa: F401
-
-        print("[deps] langchain-community: OK", flush=True)
-    except Exception as e:
-        print(f"[deps] langchain-community: MISSING ({e})", flush=True)
-
-# #endregion
-
 # =============================================
 # MODELS
 # =============================================
@@ -225,12 +212,8 @@ async def delete_doc(doc_id: str):
 
 @app.post("/api/chat")
 def chat(request: ChatRequest):
-
     doc = _get_document_meta(request.document_id)
-    if not doc:
-        raise HTTPException(404, "Document not found")
-
-    if doc["status"] != "processed":
+    if doc and doc.get("status") != "processed":
         raise HTTPException(400, "Document is still processing. Please wait.")
 
     try:
@@ -242,9 +225,14 @@ def chat(request: ChatRequest):
 
         pkl_path = DOCS_PKL_DIR / f"{request.document_id}.pkl"
         all_docs = None
-        if pkl_path.exists():
-            with open(pkl_path, "rb") as pf:
-                all_docs = pickle.load(pf)
+        if not pkl_path.exists():
+            raise HTTPException(
+                404,
+                "Document pickle not found. Upload may not have finished or state was reset on redeploy.",
+            )
+
+        with open(pkl_path, "rb") as pf:
+            all_docs = pickle.load(pf)
 
         answer, source_docs = query_rag(
             request.query,
