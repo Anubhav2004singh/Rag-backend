@@ -30,7 +30,7 @@ def create_vector_store(documents, collection_name="default"):
         collection_name: unique name for the collection (e.g. document ID)
     """
 
-    print(f"Creating embeddings and storing in ChromaDB (collection: {collection_name})...")
+    print(flush=True, f"Creating embeddings and storing in ChromaDB (collection: {collection_name})...")
 
     embeddings = get_embedding()
 
@@ -42,7 +42,7 @@ def create_vector_store(documents, collection_name="default"):
         collection_metadata={"hnsw:space": "cosine"}
     )
 
-    print("[OK] Vector store saved at:", DB_PATH)
+    print(flush=True, "[OK] Vector store saved at:", DB_PATH)
 
     return vectorstore
 
@@ -59,7 +59,7 @@ def load_vectorstore(collection_name="default"):
         collection_name: name of the collection to load
     """
 
-    print(f"Loading existing vector store (collection: {collection_name})...")
+    print(flush=True, f"Loading existing vector store (collection: {collection_name})...")
 
     embeddings = get_embedding()
 
@@ -69,6 +69,6 @@ def load_vectorstore(collection_name="default"):
         collection_name=collection_name,
     )
 
-    print("[OK] Vector store loaded")
+    print(flush=True, "[OK] Vector store loaded")
 
     return vectorstore

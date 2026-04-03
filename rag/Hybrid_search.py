@@ -10,12 +10,12 @@ import pickle
 
 def load_all_docs(path="docs.pkl"):
 
-    print("[DIR] Loading documents for BM25...")
+    print(flush=True, "[DIR] Loading documents for BM25...")
 
     with open(path, "rb") as f:
         docs = pickle.load(f)
 
-    print(f"[OK] Loaded {len(docs)} documents")
+    print(flush=True, f"[OK] Loaded {len(docs)} documents")
 
     return docs
 
@@ -59,7 +59,7 @@ def hybrid_retrieval(query, vectordb, all_docs=None, docs_pkl_path="docs.pkl", k
         k: number of results per retriever
     """
 
-    print("\n[HYBRID] Running Hybrid Search...")
+    print(flush=True, "\n[HYBRID] Running Hybrid Search...")
 
     # Load docs for BM25
     if all_docs is None:
@@ -73,8 +73,8 @@ def hybrid_retrieval(query, vectordb, all_docs=None, docs_pkl_path="docs.pkl", k
     dense_docs = dense_retriever.invoke(query)
     sparse_docs = sparse_retriever.invoke(query)
 
-    print(f"Dense docs: {len(dense_docs)}")
-    print(f"Sparse docs: {len(sparse_docs)}")
+    print(flush=True, f"Dense docs: {len(dense_docs)}")
+    print(flush=True, f"Sparse docs: {len(sparse_docs)}")
 
     # Combine results
     combined_docs = dense_docs + sparse_docs
@@ -88,6 +88,6 @@ def hybrid_retrieval(query, vectordb, all_docs=None, docs_pkl_path="docs.pkl", k
             seen.add(doc.page_content)
             unique_docs.append(doc)
 
-    print(f"[OK] Hybrid results after deduplication: {len(unique_docs)}")
+    print(flush=True, f"[OK] Hybrid results after deduplication: {len(unique_docs)}")
 
     return unique_docs

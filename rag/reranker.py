@@ -10,11 +10,11 @@ def _get_reranker():
     """Load reranker model on first use (lazy loading)"""
     global _reranker_model
     if _reranker_model is None:
-        print("[LOAD] Loading reranker model...")
+        print(flush=True, "[LOAD] Loading reranker model...")
         _reranker_model = CrossEncoder(
             "cross-encoder/ms-marco-MiniLM-L-6-v2"
         )
-        print("[OK] Reranker loaded")
+        print(flush=True, "[OK] Reranker loaded")
     return _reranker_model
 
 
@@ -35,10 +35,10 @@ def rerank_documents(query, docs, top_k=5):
         reranked_docs (top_k)
     """
 
-    print("\n[RANK] Running Reranker...")
+    print(flush=True, "\n[RANK] Running Reranker...")
 
     if not docs:
-        print("[WARN] No documents to rerank")
+        print(flush=True, "[WARN] No documents to rerank")
         return []
 
     reranker_model = _get_reranker()
@@ -62,6 +62,6 @@ def rerank_documents(query, docs, top_k=5):
     # Extract top_k docs
     top_docs = [doc for doc, _ in ranked_docs[:top_k]]
 
-    print(f"[OK] Reranked top {top_k} documents")
+    print(flush=True, f"[OK] Reranked top {top_k} documents")
 
     return top_docs

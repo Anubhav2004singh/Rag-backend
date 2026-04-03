@@ -14,7 +14,7 @@ def rrf_fusion(result_lists, k=60):
         ranked_docs (list)
     """
 
-    print("\n[LINK] Running RRF Fusion...")
+    print(flush=True, "\n[LINK] Running RRF Fusion...")
 
     scores = {}
     doc_map = {}
@@ -41,6 +41,6 @@ def rrf_fusion(result_lists, k=60):
     # Convert back to documents
     ranked_docs = [doc_map[doc_id] for doc_id, _ in ranked_doc_ids]
 
-    print(f"[OK] RRF combined docs: {len(ranked_docs)}")
+    print(flush=True, f"[OK] RRF combined docs: {len(ranked_docs)}")
 
     return ranked_docs
