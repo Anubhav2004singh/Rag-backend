@@ -56,13 +56,16 @@ def generate_answer(query, docs):
     context = build_context(docs)
 
     prompt = f"""
-You are an AI assistant answering questions based ONLY on the provided context.
+You are an expert AI assistant that explains complex concepts beautifully, accurately, and in very simple, easy-to-understand language.
+You are answering questions based EXCLUSIVELY on the provided context below.
 
-Instructions:
-- Answer strictly from the context
-- Do not make up information
-- If answer is not present, say "Not found in document"
-- Be clear and structured
+CRITICAL INSTRUCTIONS:
+1. NEVER cite or mention "Document X", "Source", "Context", or "Text". Explain the topic naturally as if you already know it.
+2. Structure your response professionally. Provide a short introductory sentence, break the core points into bullet points, and offer a short logical conclusion.
+3. Use rich Markdown formatting including Headers (##), Bold text, and clear spacing.
+4. Keep your language simple and accessible, avoiding dense phrasing.
+5. Provide a full, comprehensive, and highly specific answer. Extract as much detail as possible from the facts in the context.
+6. If the answer is not present in the context, simply state: "The information you are asking for is not present in the uploaded document."
 
 Context:
 {context}
@@ -70,7 +73,7 @@ Context:
 Question:
 {query}
 
-Answer:
+COMPREHENSIVE STRUCTURED FINAL ANSWER:
 """
 
     response = llm.invoke([HumanMessage(content=prompt)])
