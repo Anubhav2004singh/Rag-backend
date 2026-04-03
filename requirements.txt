@@ -2,7 +2,7 @@ langchain-chroma
 chromadb
 langchain-google-genai
 langchain-huggingface
-sentence-transformers
+
 huggingface-hub
 python-dotenv
 pydantic
