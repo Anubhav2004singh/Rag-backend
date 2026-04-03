@@ -17,7 +17,7 @@ def get_embedding():
     if _embedding_model is None:
         print("[LOAD] Initializing Local FastEmbed...", flush=True)
         from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-        _embedding_model = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+        _embedding_model = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5", threads=1)
     return _embedding_model
 
 
@@ -33,8 +33,17 @@ def create_vector_store(documents, collection_name="default"):
 
     embeddings = get_embedding()
     
-    # FAISS creation is extremely fast and entirely in memory natively
-    vectorstore = FAISS.from_documents(documents, embeddings)
+    vectorstore = None
+    batch_size = 16
+    total = len(documents)
+
+    for i in range(0, total, batch_size):
+        batch = documents[i:i + batch_size]
+        print(f"   Embedding batch {i // batch_size + 1}/{(total + batch_size - 1) // batch_size}...", flush=True)
+        if vectorstore is None:
+            vectorstore = FAISS.from_documents(batch, embeddings)
+        else:
+            vectorstore.add_documents(batch)
     
     # Save the index locally to disk
     save_path = os.path.join(DB_DIR, collection_name)
