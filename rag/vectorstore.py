@@ -45,16 +45,30 @@ def create_vector_store(documents, collection_name="default"):
     for i in range(0, total, batch_size):
         batch = documents[i:i + batch_size]
         print(f"   Embedding batch {i // batch_size + 1}/{(total + batch_size - 1) // batch_size} via Google API...", flush=True)
+        import time
         
-        # We add a tiny 1.5s sleep to prevent 429 Rate Limit errors from Google's Free API
-        if i > 0:
-            import time
-            time.sleep(1.5)
-            
-        if vectorstore is None:
-            vectorstore = FAISS.from_documents(batch, embeddings)
-        else:
-            vectorstore.add_documents(batch)
+        max_retries = 6
+        for attempt in range(max_retries):
+            try:
+                if vectorstore is None:
+                    vectorstore = FAISS.from_documents(batch, embeddings)
+                else:
+                    vectorstore.add_documents(batch)
+                break # Success!
+            except Exception as e:
+                error_msg = str(e)
+                if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                    if attempt < max_retries - 1:
+                        wait_time = 20 # Google's quota resets typically every 15s or 1 minute
+                        print(f"      [RATE LIMIT] Google API quota hit. Sleeping {wait_time}s (Attempt {attempt+1}/{max_retries})...", flush=True)
+                        time.sleep(wait_time)
+                    else:
+                        raise e
+                else:
+                    raise e
+        
+        # Base 1s delay to organically stretch out normal batches
+        time.sleep(1.0)
     
     # Save the index locally to disk
     save_path = os.path.join(DB_DIR, collection_name)
