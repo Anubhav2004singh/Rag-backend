@@ -49,6 +49,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# #region deps check
+@app.on_event("startup")
+def _deps_startup_check():
+    # Runtime proof in Render logs: ensures `langchain-community` is installed.
+    try:
+        import langchain_community  # noqa: F401
+
+        print("[deps] langchain-community: OK", flush=True)
+    except Exception as e:
+        print(f"[deps] langchain-community: MISSING ({e})", flush=True)
+
+# #endregion
+
 # =============================================
 # MODELS
 # =============================================
