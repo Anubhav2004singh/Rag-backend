@@ -5,11 +5,11 @@ RAG Backend - FastAPI Server (Render Ready)
 import os
 import json
 import uuid
+import threading
 import pickle
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -92,6 +92,50 @@ def _format_file_size(size_bytes):
     i = int(math.floor(math.log(size_bytes, 1024)))
     return f"{round(size_bytes / (1024 ** i), 1)} {sizes[i]}"
 
+
+def _ingest_document_sync(doc_id: str, file_path_str: str, filename: str):
+    """Run ingestion in a worker thread; updates metadata when done."""
+    try:
+        from rag.ingestion import run_complete_ingestion_pipeline
+        from rag.vectorstore import create_vector_store
+
+        print(f"Processing {doc_id}: {filename}")
+        chunk_docs = run_complete_ingestion_pipeline(file_path_str)
+
+        if not chunk_docs:
+            _update_document_status(
+                doc_id,
+                status="error",
+                error_message="No text could be extracted from this PDF",
+            )
+            return
+
+        pkl_path = DOCS_PKL_DIR / f"{doc_id}.pkl"
+        with open(pkl_path, "wb") as f:
+            pickle.dump(chunk_docs, f)
+
+        collection_name = f"doc_{doc_id.replace('-', '_')}"
+        create_vector_store(chunk_docs, collection_name=collection_name)
+
+        _update_document_status(doc_id, status="processed", chunk_count=len(chunk_docs))
+        print(f"Done {doc_id}: {len(chunk_docs)} chunks")
+
+    except Exception as e:
+        traceback.print_exc()
+        _update_document_status(doc_id, status="error", error_message=str(e)[:300])
+
+
+def _start_ingestion_thread(doc_id: str, file_path_str: str, filename: str):
+    """Detach ingestion from the ASGI request (Render can drop async follow-up work)."""
+    t = threading.Thread(
+        target=_ingest_document_sync,
+        args=(doc_id, file_path_str, filename),
+        name=f"ingest-{doc_id}",
+        daemon=False,
+    )
+    t.start()
+
+
 # =============================================
 # ROUTES
 # =============================================
@@ -102,11 +146,11 @@ async def root():
 
 
 @app.post("/api/upload")
-def upload(file: UploadFile = File(...)):
+async def upload(file: UploadFile = File(...)):
     """
-    Upload PDF and process it SYNCHRONOUSLY.
-    On Render free tier, background threads get killed when the service
-    spins down, so we process inline. The fast pipeline takes ~10-30 seconds.
+    Save PDF, return immediately with status indexing.
+    Ingestion runs in a non-daemon thread (not tied to Starlette BackgroundTasks).
+    Client should poll GET /api/documents until status is processed or error.
     """
 
     if not file.filename or not file.filename.lower().endswith(".pdf"):
@@ -115,12 +159,10 @@ def upload(file: UploadFile = File(...)):
     doc_id = str(uuid.uuid4())[:8]
     file_path = DOCS_DIR / f"{doc_id}_{file.filename}"
 
-    # Save file
-    contents = file.file.read()
+    contents = await file.read()
     with open(file_path, "wb") as f:
         f.write(contents)
 
-    # Save initial metadata
     docs = _load_documents_meta()
     doc_meta = {
         "id": doc_id,
@@ -135,38 +177,9 @@ def upload(file: UploadFile = File(...)):
     docs.insert(0, doc_meta)
     _save_documents_meta(docs)
 
-    # Process SYNCHRONOUSLY (no background thread)
-    try:
-        from rag.ingestion import run_complete_ingestion_pipeline
-        from rag.vectorstore import create_vector_store
+    _start_ingestion_thread(doc_id, str(file_path), file.filename)
 
-        print(f"Processing {doc_id}: {file.filename}")
-        chunk_docs = run_complete_ingestion_pipeline(str(file_path))
-
-        if not chunk_docs:
-            _update_document_status(doc_id, status="error",
-                                    error_message="No text could be extracted from this PDF")
-            return {"id": doc_id, "status": "error", "message": "No text extracted"}
-
-        # Save docs pickle for BM25
-        pkl_path = DOCS_PKL_DIR / f"{doc_id}.pkl"
-        with open(pkl_path, "wb") as f:
-            pickle.dump(chunk_docs, f)
-
-        # Create vector store
-        collection_name = f"doc_{doc_id.replace('-', '_')}"
-        create_vector_store(chunk_docs, collection_name=collection_name)
-
-        # Mark as processed
-        _update_document_status(doc_id, status="processed", chunk_count=len(chunk_docs))
-        print(f"Done {doc_id}: {len(chunk_docs)} chunks")
-
-        return {"id": doc_id, "status": "processed", "chunks": len(chunk_docs)}
-
-    except Exception as e:
-        traceback.print_exc()
-        _update_document_status(doc_id, status="error", error_message=str(e)[:300])
-        return {"id": doc_id, "status": "error", "message": str(e)[:300]}
+    return {"id": doc_id, "status": "indexing"}
 
 
 @app.get("/api/documents")
