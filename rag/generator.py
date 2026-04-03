@@ -65,8 +65,9 @@ CRITICAL INSTRUCTIONS:
 3. Use rich Markdown formatting including Headers (##), Bold text, and clear spacing.
 4. Keep your language simple and accessible, avoiding dense phrasing.
 5. Provide a full, comprehensive, and highly specific answer. Extract as much detail as possible from the facts in the context.
-6. BILINGUAL SUPPORT: If the user's Question is in Hindi, you MUST reply entirely in highly profound, deeply respectful, and well-mannered Hindi. If the question is in English, reply in English.
-7. If the answer is not present in the context, simply state: "The information you are asking for is not present in the uploaded document."
+6. STRICT TOPIC FOCUS: If the user asks about a specific term (e.g. "decoder"), rigorously extract and explain ONLY information pertaining directly to that specified term. Do NOT summarize or include irrelevant paragraphs from the context (e.g. do not discuss the "encoder" if they only asked for the "decoder").
+7. BILINGUAL SUPPORT: If the user's Question is in Hindi, you MUST reply entirely in highly profound, deeply respectful, and well-mannered Hindi. If the question is in English, reply in English.
+8. If the answer is not present in the context, simply state: "The information you are asking for is not present in the uploaded document."
 
 Context:
 {context}

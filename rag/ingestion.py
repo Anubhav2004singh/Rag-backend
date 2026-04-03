@@ -43,7 +43,7 @@ def extract_text_from_pdf(file_path: str) -> tuple[str, int]:
 # Fast Chunking (LangChain text splitter)
 # =============================================
 
-def chunk_text(text: str, chunk_size: int = 4500, chunk_overlap: int = 500) -> List[Document]:
+def chunk_text(text: str, chunk_size: int = 800, chunk_overlap: int = 150) -> List[Document]:
     """
     Split text into chunks using RecursiveCharacterTextSplitter.
     Much faster than unstructured's chunk_by_title.

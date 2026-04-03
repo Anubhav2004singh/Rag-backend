@@ -34,7 +34,7 @@ def get_sparse_retriever(all_docs, k=5):
 # Hybrid Retrieval
 # -----------------------------
 
-def hybrid_retrieval(query, vectordb, all_docs=None, docs_pkl_path="docs.pkl", k=10):
+def hybrid_retrieval(query, vectordb, all_docs=None, docs_pkl_path="docs.pkl", k=20):
     """
     Combines Dense + Sparse retrieval using RRF fusion natively
     """

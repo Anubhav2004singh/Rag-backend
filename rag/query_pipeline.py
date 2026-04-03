@@ -24,7 +24,7 @@ def query_rag(query, vectordb, all_docs=None, docs_pkl_path="docs.pkl"):
     # Step 2: Final Result Selection
     # -----------------------------
     # Skips CrossEncoder neural net re-ranking to save RAM & CPU
-    final_docs = hybrid_docs[:5]
+    final_docs = hybrid_docs[:8]
 
     # -----------------------------
     # Step 3: Generate Answer
