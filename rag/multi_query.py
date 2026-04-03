@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 import os
-print(flush=True, "API KEY:", os.getenv("GOOGLE_API_KEY"))
+print("API KEY:", os.getenv("GOOGLE_API_KEY"))
 
 # -----------------------------
 # Gemini LLM
@@ -111,25 +111,25 @@ def multi_query_retrieval(query, vectordb):
     Full custom multi-query pipeline
     """
 
-    print(flush=True, "\n[MULTI] Generating multiple queries...")
+    print("\n[MULTI] Generating multiple queries...")
 
     queries = generate_multi_queries(query)
 
-    print(flush=True, "Generated Queries:")
+    print("Generated Queries:")
     for q in queries:
-        print(flush=True, " -", q)
+        print(" -", q)
 
     # include original query also
     queries.append(query)
 
-    print(flush=True, "\n[SEARCH] Retrieving documents...")
+    print("\n[SEARCH] Retrieving documents...")
 
     docs = retrieve_documents(queries, vectordb)
 
-    print(flush=True, f"Retrieved {len(docs)} docs before deduplication")
+    print(f"Retrieved {len(docs)} docs before deduplication")
 
     docs = deduplicate_docs(docs)
 
-    print(flush=True, f"[OK] Final docs after deduplication: {len(docs)}")
+    print(f"[OK] Final docs after deduplication: {len(docs)}")
 
     return docs

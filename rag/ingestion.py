@@ -20,14 +20,14 @@ def extract_text_from_pdf(file_path: str) -> tuple[str, int]:
     """
     import pdfplumber
 
-    print(flush=True, f"[FILE] Extracting text from: {file_path}")
+    print(f"[FILE] Extracting text from: {file_path}")
 
     full_text = ""
     page_count = 0
 
     with pdfplumber.open(file_path) as pdf:
         page_count = len(pdf.pages)
-        print(flush=True, f"   Pages: {page_count}")
+        print(f"   Pages: {page_count}")
 
         for i, page in enumerate(pdf.pages):
             text = page.extract_text() or ""
@@ -47,7 +47,7 @@ def extract_text_from_pdf(file_path: str) -> tuple[str, int]:
 
             full_text += page_text + "\n\n"
 
-    print(flush=True, f"   Extracted {len(full_text)} characters")
+    print(f"   Extracted {len(full_text)} characters")
     return full_text.strip(), page_count
 
 
@@ -60,7 +60,7 @@ def chunk_text(text: str, chunk_size: int = 1500, chunk_overlap: int = 200) -> L
     Split text into chunks using RecursiveCharacterTextSplitter.
     Much faster than unstructured's chunk_by_title.
     """
-    print(flush=True, f"[CUT] Splitting text into chunks (size={chunk_size}, overlap={chunk_overlap})")
+    print(f"[CUT] Splitting text into chunks (size={chunk_size}, overlap={chunk_overlap})")
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -71,7 +71,7 @@ def chunk_text(text: str, chunk_size: int = 1500, chunk_overlap: int = 200) -> L
 
     chunks = splitter.create_documents([text])
 
-    print(flush=True, f"   Created {len(chunks)} chunks")
+    print(f"   Created {len(chunks)} chunks")
     return chunks
 
 
@@ -88,23 +88,23 @@ def run_complete_ingestion_pipeline(pdf_path: str) -> List[Document]:
 
     Typically completes in < 30 seconds for most PDFs.
     """
-    print(flush=True, "=" * 50)
-    print(flush=True, "[>>] Starting FAST ingestion pipeline")
-    print(flush=True, "=" * 50)
+    print("=" * 50)
+    print("[>>] Starting FAST ingestion pipeline")
+    print("=" * 50)
 
     # Step 1: Extract text
     text, page_count = extract_text_from_pdf(pdf_path)
 
     if not text.strip():
-        print(flush=True, "[WARN] No text extracted from PDF. It might be a scanned/image-only PDF.")
-        print(flush=True, "   Falling back to basic extraction...")
+        print("[WARN] No text extracted from PDF. It might be a scanned/image-only PDF.")
+        print("   Falling back to basic extraction...")
         # Try with a simpler approach for scanned PDFs
         try:
             from unstructured.partition.pdf import partition_pdf
             elements = partition_pdf(filename=pdf_path, strategy="fast")
             text = "\n\n".join([el.text for el in elements if el.text])
         except Exception as e:
-            print(flush=True, f"   Fallback also failed: {e}")
+            print(f"   Fallback also failed: {e}")
             return []
 
     # Step 2: Chunk
@@ -114,5 +114,5 @@ def run_complete_ingestion_pipeline(pdf_path: str) -> List[Document]:
     for doc in documents:
         doc.metadata["source_pages"] = page_count
 
-    print(flush=True, f"\n[OK] Pipeline complete: {len(documents)} chunks from {page_count} pages")
+    print(f"\n[OK] Pipeline complete: {len(documents)} chunks from {page_count} pages")
     return documents

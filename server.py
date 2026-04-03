@@ -140,7 +140,7 @@ async def upload(file: UploadFile = File(...)):
         from rag.ingestion import run_complete_ingestion_pipeline
         from rag.vectorstore import create_vector_store
 
-        print(flush=True, f"Processing {doc_id}: {file.filename}")
+        print(f"Processing {doc_id}: {file.filename}")
         chunk_docs = run_complete_ingestion_pipeline(str(file_path))
 
         if not chunk_docs:
@@ -159,7 +159,7 @@ async def upload(file: UploadFile = File(...)):
 
         # Mark as processed
         _update_document_status(doc_id, status="processed", chunk_count=len(chunk_docs))
-        print(flush=True, f"Done {doc_id}: {len(chunk_docs)} chunks")
+        print(f"Done {doc_id}: {len(chunk_docs)} chunks")
 
         return {"id": doc_id, "status": "processed", "chunks": len(chunk_docs)}
 
@@ -242,5 +242,5 @@ async def chat(request: ChatRequest):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    print(flush=True, f"Starting server on port {port}")
+    print(f"Starting server on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)

@@ -23,9 +23,9 @@ def query_rag(query, vectordb, all_docs=None, docs_pkl_path="docs.pkl"):
         final answer string
     """
 
-    print(flush=True, "\n==============================")
-    print(flush=True, "[>>] STARTING RAG PIPELINE")
-    print(flush=True, "==============================")
+    print("\n==============================")
+    print("[>>] STARTING RAG PIPELINE")
+    print("==============================")
 
     # -----------------------------
     # Step 1: Multi Query
@@ -52,6 +52,6 @@ def query_rag(query, vectordb, all_docs=None, docs_pkl_path="docs.pkl"):
     # -----------------------------
     answer = generate_answer(query, reranked_docs)
 
-    print(flush=True, "\n[OK] RAG PIPELINE COMPLETED")
+    print("\n[OK] RAG PIPELINE COMPLETED")
 
     return answer, reranked_docs

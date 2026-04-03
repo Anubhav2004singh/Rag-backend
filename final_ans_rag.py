@@ -8,5 +8,5 @@ query = "Explain attention mechanism in transformers"
 
 answer = query_rag(query, vectordb)
 
-print(flush=True, "\n[TIP] FINAL ANSWER:\n")
-print(flush=True, answer)
+print("\n[TIP] FINAL ANSWER:\n")
+print(answer)

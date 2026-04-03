@@ -46,7 +46,7 @@ def generate_answer(query, docs):
     Generate answer using retrieved documents
     """
 
-    print(flush=True, "\n[AI] Generating final answer...")
+    print("\n[AI] Generating final answer...")
 
     if not docs:
         return "No relevant documents found."
@@ -75,6 +75,6 @@ Answer:
 
     response = llm.invoke([HumanMessage(content=prompt)])
 
-    print(flush=True, "[OK] Answer generated")
+    print("[OK] Answer generated")
 
     return response.content
