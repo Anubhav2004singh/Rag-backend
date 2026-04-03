@@ -57,6 +57,10 @@ class ChatRequest(BaseModel):
     query: str
     document_id: str
 
+class TranslateRequest(BaseModel):
+    text: str
+    target_language: str
+
 # =============================================
 # UTIL FUNCTIONS
 # =============================================
@@ -272,6 +276,32 @@ def chat(request: ChatRequest):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(500, f"Error: {str(e)[:300]}")
+
+
+@app.post("/api/translate")
+def translate_message(request: TranslateRequest):
+    try:
+        from rag.generator import get_llm
+        from langchain_core.messages import HumanMessage
+        llm = get_llm()
+        lang_map = {"hi": "Hindi", "en": "English"}
+        target = lang_map.get(request.target_language, "English")
+        
+        prompt = f"""
+Translate the following text exclusively into {target}.
+CRITICAL INSTRUCTIONS:
+1. Preserve ALL markdown formatting exactly as it is (including **, ##, `-`, bullet points, and codeblocks).
+2. ONLY output the translated text. Do not add any conversational or concluding text. Do not wrap in quotes.
+3. If the text is already completely in {target}, simply return it identically.
+
+Text to translate:
+{request.text}
+"""
+        response = llm.invoke([HumanMessage(content=prompt)])
+        return {"translated_text": response.content.strip()}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, f"Translation Error: {str(e)[:300]}")
 
 
 # =============================================
