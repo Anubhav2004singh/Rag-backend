@@ -18,9 +18,9 @@ def get_embedding():
         print("[LOAD] Initializing Google API Embeddings (Zero RAM footprint)...", flush=True)
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         
-        # Using the ultra-stable embedding-001 model for compatibility 
+        # Using the ultra-stable gemini-embedding-001 model for compatibility 
         _embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001", 
+            model="models/gemini-embedding-001", 
             task_type="retrieval_document"
         )
     return _embedding_model
