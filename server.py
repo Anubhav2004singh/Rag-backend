@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -40,25 +41,13 @@ DOCS_PKL_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="Curator RAG API", version="1.0.0")
 
-from starlette.responses import Response
-
-@app.middleware("http")
-async def cors_middleware(request, call_next):
-    if request.method == "OPTIONS":
-        return Response(
-            status_code=200,
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Max-Age": "86400",
-            },
-        )
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # =============================================
 # MODELS
@@ -107,7 +96,7 @@ def _format_file_size(size_bytes):
 # ROUTES
 # =============================================
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"message": "Curator RAG API is running"}
 
