@@ -39,12 +39,15 @@ def create_vector_store(documents, collection_name="default"):
     embeddings = get_embedding()
     
     vectorstore = None
-    batch_size = 50  # API handles larger batches gracefully
+    # Google's free tier is strictly 100 Requests Per Minute. Langchain's Google wrapper
+    # sends items concurrently, causing instant 429 crashes on large batches. 
+    # By strictly reducing batch_size to 2 and enforcing a time buffer, we mathematically bypass it.
+    batch_size = 2
     total = len(documents)
 
     for i in range(0, total, batch_size):
         batch = documents[i:i + batch_size]
-        print(f"   Embedding batch {i // batch_size + 1}/{(total + batch_size - 1) // batch_size} via Google API...", flush=True)
+        print(f"   Embedding chunk batch {i // batch_size + 1}/{(total + batch_size - 1) // batch_size} via Google API...", flush=True)
         import time
         
         max_retries = 6
@@ -67,8 +70,8 @@ def create_vector_store(documents, collection_name="default"):
                 else:
                     raise e
         
-        # Base 1s delay to organically stretch out normal batches
-        time.sleep(1.0)
+        # Base delay to organically stretch out batches and prevent RPM exhaustion
+        time.sleep(1.5)
     
     # Save the index locally to disk
     save_path = os.path.join(DB_DIR, collection_name)
