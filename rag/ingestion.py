@@ -10,7 +10,7 @@ load_dotenv(override=True)
 
 
 # =============================================
-# Google Gemini 1.5 Flash Vision OCR Adapter
+# Google Gemini 2.5 Flash Vision OCR Adapter
 # =============================================
 
 def google_vision_ocr(image) -> str:
@@ -24,7 +24,7 @@ def google_vision_ocr(image) -> str:
     image.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
     
     message = HumanMessage(
         content=[
@@ -96,7 +96,7 @@ def extract_text_from_pdf(file_path: str) -> tuple[str, int]:
                     try:
                         from PIL import Image
                         
-                        print(f"      [OCR] Blank page detected. Booting Gemini 1.5 Flash Vision OCR...", flush=True)
+                        print(f"      [OCR] Blank page detected. Booting Gemini 2.5 Flash Vision OCR...", flush=True)
                         pix = page.get_pixmap(dpi=150) # Moderate DPI for speed vs accuracy balance
                         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                         
@@ -153,7 +153,7 @@ def extract_text_from_image(file_path: str) -> tuple[str, int]:
         if img.mode not in ("L", "RGB", "RGBA"):
             img = img.convert("RGB")
             
-        print(f"      [OCR] Booting Gemini 1.5 Flash Vision OCR...", flush=True)
+        print(f"      [OCR] Booting Gemini 2.5 Flash Vision OCR...", flush=True)
         text = google_vision_ocr(img)
         return text.strip(), 1
     except Exception as e:
