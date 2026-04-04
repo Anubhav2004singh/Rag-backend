@@ -22,3 +22,7 @@ rank_bm25
 
 # Hugging Face Embeddings API
 langchain-huggingface
+
+# OCR Scanned PDFs
+pytesseract
+Pillow

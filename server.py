@@ -157,8 +157,8 @@ async def upload(file: UploadFile = File(...)):
     Client should poll GET /api/documents until status is processed or error.
     """
 
-    if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(400, "Only PDF files are supported")
+    if not file.filename:
+        raise HTTPException(400, "Invalid file provided")
 
     doc_id = str(uuid.uuid4())[:8]
     file_path = DOCS_DIR / f"{doc_id}_{file.filename}"
