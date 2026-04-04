@@ -10,6 +10,36 @@ load_dotenv(override=True)
 
 
 # =============================================
+# Google Gemini 1.5 Flash Vision OCR Adapter
+# =============================================
+
+def google_vision_ocr(image) -> str:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_core.messages import HumanMessage
+    import base64
+    from io import BytesIO
+
+    # Serialize PIL Image into base64 bypass
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+    
+    message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Extract all the text inside this image perfectly. Maintain the exact formatting. Do not add any conversational text or prefix, just output the exact text you see. If there is absolutely no text, return an empty string.",
+            },
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_str}"}},
+        ]
+    )
+    
+    response = llm.invoke([message])
+    return response.content
+
+# =============================================
 # LIGHTNING PDF Text Extraction (using PyMuPDF)
 # =============================================
 
@@ -40,24 +70,20 @@ def extract_text_from_pdf(file_path: str) -> tuple[str, int]:
                 image_list = page.get_images()
                 if image_list:
                     try:
-                        import pytesseract
                         from PIL import Image
                         import io
                         
-                        if platform.system() == "Windows":
-                            default_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-                            if os.path.exists(default_path):
-                                pytesseract.pytesseract.tesseract_cmd = default_path
-                                
                         for img_index, img in enumerate(image_list):
                             xref = img[0]
                             base_image = pdf.extract_image(xref)
                             if base_image and "image" in base_image:
                                 img_pil = Image.open(io.BytesIO(base_image["image"]))
-                                # Normalize image modes to prevent Tesseract crashes
+                                # Normalize image modes
                                 if img_pil.mode not in ("L", "RGB", "RGBA"):
                                     img_pil = img_pil.convert("RGB")
-                                ocr_text = pytesseract.image_to_string(img_pil)
+                                
+                                ocr_text = google_vision_ocr(img_pil)
+                                
                                 if ocr_text.strip():
                                     page_text += f"\n[Embedded Image {img_index+1} Content]: {ocr_text.strip()}\n"
 
@@ -68,19 +94,13 @@ def extract_text_from_pdf(file_path: str) -> tuple[str, int]:
                 # 2. Master Fallback: If page is STILL totally blank, rasterize the entire physical page 
                 if not page_text.strip():
                     try:
-                        import pytesseract
                         from PIL import Image
                         
-                        if platform.system() == "Windows":
-                            default_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-                            if os.path.exists(default_path):
-                                pytesseract.pytesseract.tesseract_cmd = default_path
-                                
-                        print(f"      [OCR] Blank page detected. Booting PyTesseract Full-Page Neural vision...", flush=True)
+                        print(f"      [OCR] Blank page detected. Booting Gemini 1.5 Flash Vision OCR...", flush=True)
                         pix = page.get_pixmap(dpi=150) # Moderate DPI for speed vs accuracy balance
                         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                         
-                        ocr_text = pytesseract.image_to_string(img)
+                        ocr_text = google_vision_ocr(img)
                         page_text += ocr_text + "\n"
                         
                     except Exception as ocr_err:
@@ -124,21 +144,17 @@ def chunk_text(text: str, chunk_size: int = 800, chunk_overlap: int = 150) -> Li
 # =============================================
 
 def extract_text_from_image(file_path: str) -> tuple[str, int]:
-    """Bypasses PDF logic and natively pipes standard Images (JPG/PNG) straight into Tesseract."""
+    """Bypasses PDF logic and natively pipes standard Images (JPG/PNG) straight into Gemini Vision."""
     print(f"[FILE] Extracting text directly from Image: {file_path}", flush=True)
     try:
-        import pytesseract
         from PIL import Image
-        import platform
-        if platform.system() == "Windows":
-            default_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-            if os.path.exists(default_path):
-                pytesseract.pytesseract.tesseract_cmd = default_path
         
         img = Image.open(file_path)
         if img.mode not in ("L", "RGB", "RGBA"):
             img = img.convert("RGB")
-        text = pytesseract.image_to_string(img)
+            
+        print(f"      [OCR] Booting Gemini 1.5 Flash Vision OCR...", flush=True)
+        text = google_vision_ocr(img)
         return text.strip(), 1
     except Exception as e:
         print(f"      [WARN] Image OCR Failed: {e}", flush=True)
