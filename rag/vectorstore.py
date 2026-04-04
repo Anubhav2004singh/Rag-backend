@@ -15,13 +15,18 @@ _embedding_model = None
 def get_embedding():
     global _embedding_model
     if _embedding_model is None:
-        print("[LOAD] Initializing Google API Embeddings (Zero RAM footprint)...", flush=True)
-        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        print("[LOAD] Initializing Hugging Face API Embeddings (Zero RAM footprint)...", flush=True)
+        from langchain_huggingface import HuggingFaceEndpointEmbeddings
+        import os
         
-        # Upgraded to text-embedding-004 to unlock a fully fresh rate-limit bucket and far superior dense vectors
-        _embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004", 
-            task_type="retrieval_document"
+        hf_token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+        if not hf_token:
+            raise ValueError("HUGGINGFACEHUB_API_TOKEN not found in .env")
+
+        _embedding_model = HuggingFaceEndpointEmbeddings(
+            model="sentence-transformers/all-MiniLM-L6-v2",
+            task="feature-extraction",
+            huggingfacehub_api_token=hf_token
         )
     return _embedding_model
 

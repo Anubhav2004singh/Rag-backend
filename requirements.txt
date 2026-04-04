@@ -19,3 +19,6 @@ faiss-cpu
 
 # Hybrid Search
 rank_bm25
+
+# Hugging Face Embeddings API
+langchain-huggingface
