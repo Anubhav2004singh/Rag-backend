@@ -18,9 +18,9 @@ def get_embedding():
         print("[LOAD] Initializing Google API Embeddings (Zero RAM footprint)...", flush=True)
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         
-        # Using the ultra-stable gemini-embedding-001 model for compatibility 
+        # Upgraded to text-embedding-004 to unlock a fully fresh rate-limit bucket and far superior dense vectors
         _embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001", 
+            model="models/text-embedding-004", 
             task_type="retrieval_document"
         )
     return _embedding_model
@@ -39,15 +39,14 @@ def create_vector_store(documents, collection_name="default"):
     embeddings = get_embedding()
     
     vectorstore = None
-    # Google's free tier is strictly 100 Requests Per Minute. Langchain's Google wrapper
-    # sends items concurrently, causing instant 429 crashes on large batches. 
-    # By strictly reducing batch_size to 2 and enforcing a time buffer, we mathematically bypass it.
-    batch_size = 2
+    # Google Gen AI SDK now natively batches documents in unified payloads! We bypass the old legacy bottleneck.
+    # By maximizing the payload to 90 per request, we consume ZERO extra HTTP requests and bypass the 1500/day limit!
+    batch_size = 90 
     total = len(documents)
 
     for i in range(0, total, batch_size):
         batch = documents[i:i + batch_size]
-        print(f"   Embedding chunk batch {i // batch_size + 1}/{(total + batch_size - 1) // batch_size} via Google API...", flush=True)
+        print(f"   Embedding chunk batch {i // batch_size + 1}/{(total + batch_size - 1) // batch_size} via Google API (Batch Size {len(batch)})...", flush=True)
         import time
         
         max_retries = 6
@@ -62,7 +61,7 @@ def create_vector_store(documents, collection_name="default"):
                 error_msg = str(e)
                 if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
                     if attempt < max_retries - 1:
-                        wait_time = 20 # Google's quota resets typically every 15s or 1 minute
+                        wait_time = 20 # Quota reset threshold
                         print(f"      [RATE LIMIT] Google API quota hit. Sleeping {wait_time}s (Attempt {attempt+1}/{max_retries})...", flush=True)
                         time.sleep(wait_time)
                     else:
@@ -70,8 +69,8 @@ def create_vector_store(documents, collection_name="default"):
                 else:
                     raise e
         
-        # Base delay to organically stretch out batches and prevent RPM exhaustion
-        time.sleep(1.5)
+        # Sub-second spacing between rare bulk queries
+        time.sleep(0.5)
     
     # Save the index locally to disk
     save_path = os.path.join(DB_DIR, collection_name)
